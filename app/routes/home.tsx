@@ -12,7 +12,6 @@ import { selectHomeHero } from "~/lib/home-hero";
 import { storefrontClientContext } from "~/lib/storefront";
 import {
   FALLBACK_SHOP_NAME,
-  formatPageTitle,
   getShopNameFromRootMatch,
 } from "~/lib/storefront-shop";
 import type { loader as rootLoader } from "~/root";
@@ -59,10 +58,10 @@ const HOME_QUERY = gql(
 export function meta({ matches }: Route.MetaArgs) {
   const shopName = getShopNameFromRootMatch(matches[0]);
   return [
-    { title: formatPageTitle("Home", shopName) },
+    { title: shopName },
     {
       name: "description",
-      content: `Shop new arrivals and featured categories at ${shopName}.`,
+      content: `New arrivals and featured collections at ${shopName}.`,
     },
   ];
 }

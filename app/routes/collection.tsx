@@ -15,18 +15,25 @@ import {
 import { ProductCard } from "~/components/ProductCard";
 import { loadCollectionPage } from "~/lib/collection";
 import { storefrontClientContext } from "~/lib/storefront";
-import { formatPageTitle, getShopNameFromRootMatch } from "~/lib/storefront-shop";
+import {
+  formatPageTitle,
+  getShopNameFromRootMatch,
+  truncateMetaDescription,
+} from "~/lib/storefront-shop";
 
 import type { Route } from "./+types/collection";
 
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ data, matches }: Route.MetaArgs) {
   const shopName = getShopNameFromRootMatch(matches[0]);
+  const collection = data?.collection;
+  const title = collection?.title ?? "Collection";
+  const description = collection?.description
+    ? truncateMetaDescription(collection.description)
+    : `Shop the ${title} collection at ${shopName}.`;
+
   return [
-    { title: formatPageTitle("Collection", shopName) },
-    {
-      name: "description",
-      content: `Shop the ${shopName} collection page.`,
-    },
+    { title: formatPageTitle(title, shopName) },
+    { name: "description", content: description },
   ];
 }
 

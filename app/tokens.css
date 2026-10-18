@@ -23,7 +23,7 @@
      shades, and relative-color oklch() for the softer accent tint. Nothing
      hard-codes the burgundy a second time, so the whole UI re-harmonizes from
      this one knob. */
-  --color-primary: #5d0707;
+  --color-primary: #1f3d35;
 
   /* Interactive — derived from --color-primary.
      -hover and -active are the brand darkened one and two steps in oklab; this

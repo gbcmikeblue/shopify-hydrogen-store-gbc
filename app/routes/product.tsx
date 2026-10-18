@@ -15,7 +15,11 @@ import { openCartDrawer } from "~/lib/cart-drawer";
 import { formatPrice, salePercent } from "~/lib/money";
 import { ProductProvider, useProductForm } from "~/lib/product";
 import { storefrontClientContext } from "~/lib/storefront";
-import { formatPageTitle, getShopNameFromRootMatch } from "~/lib/storefront-shop";
+import {
+  formatPageTitle,
+  getShopNameFromRootMatch,
+  truncateMetaDescription,
+} from "~/lib/storefront-shop";
 
 import type { Route } from "./+types/product";
 
@@ -133,14 +137,17 @@ const PRODUCT_QUERY = gql(
   [PRODUCT_VARIANT_FRAGMENT, PRODUCT_CARD_FRAGMENT],
 );
 
-export function meta({ matches }: Route.MetaArgs) {
+export function meta({ data, matches }: Route.MetaArgs) {
   const shopName = getShopNameFromRootMatch(matches[0]);
+  const product = data?.product;
+  const title = product?.title ?? "Product";
+  const description = product?.description
+    ? truncateMetaDescription(product.description)
+    : `Shop ${title} at ${shopName}.`;
+
   return [
-    { title: formatPageTitle("Product", shopName) },
-    {
-      name: "description",
-      content: `Shop the ${shopName} product detail page.`,
-    },
+    { title: formatPageTitle(title, shopName) },
+    { name: "description", content: description },
   ];
 }
 

@@ -1,7 +1,8 @@
 # 后续开发指南
 
-> 对应当前代码状态：`main` 分支，基线提交 `cbc5e6e`（2026-10）。
+> 对应当前代码状态：分支 `feat/p0-p2-baseline`（基于 `main@cbc5e6e`）。
 > 本文档基于逐文件走查得出，路径和结论都可直接对照代码验证。
+> P0、P1 已实施；P2 的代码准备已完成，真实店铺联调需店铺凭证。
 
 ## 1. 现状快照
 
@@ -17,21 +18,19 @@
 
 已完成的能力：分面筛选 + 排序 + 加载更多、预测搜索、购物车抽屉（Standard Actions）、Customer Account 骨架、商品/集合 JSON-LD、Shopify 分析埋点、无障碍（skip link / focus ring / `aria-live`）。
 
-未完成/缺失：多语言、多币种、真实店铺联调、e2e 测试、lint。
+未完成/缺失：真实店铺联调（待店铺凭证）、多语言、多币种、e2e 测试、lint。
 
 ---
 
-## 2. P0 基线修复（建议先做，约半天）
+## 2. P0 基线修复（已完成）
 
-这些不修，后面的改造会持续被绊住。
-
-### 2.1 补 `dev:https` 脚本
+### 2.1 补 `dev:https` 脚本（已落地）
 
 **问题**：`vite.config.ts` 用 `process.env.npm_lifecycle_event === "dev:https"` 决定是否启用 `localHttps`，`.env.example` 与 `README.md` 都让用户跑 `npm run dev:https`，但 `package.json` 里没有这个 script。
 
 **影响**：`app/lib/customer-account.ts` 里有 `if (new URL(request.url).protocol !== "https:") return;`，非 HTTPS 下 `/account` 永远返回 `unavailable`，登录流程走不通。
 
-**改法**（`package.json`）：
+**已改为**（`package.json`）：
 
 ```json
 "dev:https": "vite dev"
@@ -39,42 +38,43 @@
 
 验证：`npm run dev:https` 后访问 `https://localhost:5173`，浏览器首次会提示证书不受信（`localHttps` 自签名，属正常）。
 
-### 2.2 补 `test` 脚本
+### 2.2 补 `test` 脚本（已落地）
 
-`__test__/` 已有 5 个 `node:test` 用例（`shop`、`storefront`、`session`、`root-layout`、`predictive-search`），但没有入口。Node 版本不同，命令不同：
+`__test__/` 的 `node:test` 用例原本没有入口。**实际踩到两个坑**：
 
-```json
-"test": "node --experimental-strip-types --test __test__"
-```
+1. `node --test __test__`（目录参数）在 Node 22.12 会被当成模块入口加载，报 `Cannot find module`。必须用 glob：
+   ```json
+   "test": "node --experimental-strip-types --test \"__test__/*.test.ts\""
+   ```
+2. `root-layout.test.ts` 与 `storefront.test.ts` 会加载 `@shopify/hydrogen` 运行时，它调用 `module.registerHooks`，**该 API 需要 Node 22.15+**。在 22.12 上这两个文件必然失败（`SyntaxError: ... does not provide an export named 'registerHooks'`），与代码无关。
 
-- Node 22.12 ~ 22.x：需要 `--experimental-strip-types`
-- Node 23.6+ / 24：可去掉该参数，直接 `node --test __test__`
+结论：完整 5 个文件全绿需要 Node ≥ 22.15 或 24；22.12 下可跑其余用例。`engines` 保持官方模板的 `^22.12 || ^24`，不因测试单独抬高。
 
-改 `app/lib/shop.ts`、`app/lib/session.ts`、`app/lib/storefront.ts` 前务必先跑。
-
-### 2.3 固定换行符
+### 2.3 固定换行符（已落地）
 
 首次提交时 git 对几乎每个文件都告警 `LF will be replaced by CRLF`，说明 Windows 上 `core.autocrlf=true` 且仓库没有 `.gitattributes`。多人协作会产出整文件 diff。
 
-新增 `.gitattributes`：
+已新增 `.gitattributes`：
 
 ```gitattributes
 * text=auto eol=lf
 *.png binary
 *.ico binary
+*.woff2 binary
 ```
 
-之后执行一次 `git add --renormalize .` 再提交。
+仓库既有 blob 本身已是 LF，因此没有执行 `git add --renormalize .`（会产生无内容变化的批量条目）。若后续仍出现告警，再执行一次即可。
 
-### 2.4 清理模板残留文案
+### 2.4 清理模板残留文案（已落地）
 
-| 位置 | 现状 | 建议 |
+| 位置 | 原状 | 现改为 |
 | --- | --- | --- |
-| `app/routes/account.tsx` | `meta` 返回 `{ title: "Account · CORE" }` | 用 `formatPageTitle("Account", shopName)`，与其它路由一致 |
-| `app/routes/home.tsx` | 标题固定为 `Home` | 改为 shop 名或 slogan |
-| `app/routes/collection.tsx` | 描述是 `Shop the X collection page.` | 优先用 `collection.description` 截断做 description |
+| `app/routes/account.tsx` | 硬编码 `Account · CORE` | `formatPageTitle("Account", shopName)` |
+| `app/routes/home.tsx` | 固定 `Home · Shop` | 直接用店铺名作首页标题 |
+| `app/routes/collection.tsx` | 描述 `Shop the X collection page.` | 集合自身 `description`（截断 160 字），无则回退 |
+| `app/routes/product.tsx` | 固定 `Product · Shop` | 商品标题 + 商品 `description` 截断 |
 
-`app/lib/storefront-shop.ts` 已提供 `formatPageTitle` / `FALLBACK_SHOP_NAME` / `getShopNameFromRootMatch`，直接复用。
+新增 `app/lib/storefront-shop.ts` 的 `truncateMetaDescription(text, maxLength = 160)`：折叠空白、按词边界截断、末尾补 `…`。单测见 `__test__/storefront-shop.test.ts`。
 
 ### 2.5 加 lint / format（可选但推荐）
 
@@ -86,13 +86,15 @@
 
 ### 3.1 改主色：只动一个值
 
-`app/tokens.css` 的 `--color-primary`（当前 `#5d0707` 酒红）是唯一源头：
+`app/tokens.css` 的 `--color-primary` 是唯一源头，当前已从 `#5d0707`（酒红）改为 `#1f3d35`（深墨绿）：
 
 ```css
---color-primary: #2f4f4f;            /* 换这一行 */
+--color-primary: #1f3d35;            /* 换这一行即可整站换色 */
 --color-interactive-hover: color-mix(in oklab, var(--color-primary) 85%, black);
 --color-accent: oklch(from var(--color-primary) calc(l + 0.17) calc(c * 0.39) calc(h - 9));
 ```
+
+需要换回或换其它品牌色时，只改这一行，派生色自动跟随。
 
 hover / active / focus ring / swatch 选中态 / 徽标全部由此派生，不需要逐个组件改。
 
@@ -126,7 +128,7 @@ hover / active / focus ring / swatch 选中态 / 徽标全部由此派生，不�
 
 ---
 
-## 4. P2 接真实店铺（关键节点，约 1 天）
+## 4. P2 接真实店铺（代码已就绪，联调需凭证）
 
 ### 4.1 模式切换是自动的
 
@@ -154,6 +156,14 @@ SESSION_SECRET=          # ≥32 位随机串
 ```
 
 5. 必须 HTTPS：`npm run dev:https`（依赖 2.1）
+
+**当前状态**：代码侧已就绪。
+
+- `.env.example` 补齐了可选的 `PUBLIC_CHECKOUT_DOMAIN`
+- `/account` 不可用时按原因给出提示（mock 模式 / 非 HTTPS / 缺配置），见 `app/routes/account.tsx` 的 `unavailableReason`
+- `dev:https` 脚本已可用
+
+**仍缺的**：真实店铺凭证（`PRIVATE_STOREFRONT_API_TOKEN` 等）。没有凭证只能停留在 mock.shop，下单、登录、库存与分析上报都无法验收。
 
 ### 4.3 mock.shop 能力边界
 

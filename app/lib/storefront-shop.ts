@@ -107,3 +107,17 @@ export function getShopNameFromRootMatch(
 export function formatPageTitle(page: string, shopName: string): string {
   return `${page} · ${shopName}`;
 }
+
+/**
+ * Clamps a description to a search-result friendly length (default 160) and
+ * cuts on a word boundary so meta descriptions never end mid-word.
+ */
+export function truncateMetaDescription(text: string, maxLength = 160): string {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized;
+
+  const clipped = normalized.slice(0, maxLength - 1);
+  const lastSpace = clipped.lastIndexOf(" ");
+  const cut = lastSpace > maxLength / 2 ? clipped.slice(0, lastSpace) : clipped;
+  return `${cut.trimEnd()}…`;
+}

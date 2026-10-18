@@ -39,7 +39,12 @@ $env:PATH = 'D:\project\.tools\node22;' + $env:PATH
 cd D:\project\shopify-hydrogen-store
 npm install
 npm run dev          # http://localhost:5173
+npm run dev:https    # HTTPS 本地开发（/account 登录必需）
+npm test             # node:test 单测
+npm run typecheck    # 生成路由类型并做全量类型检查
 ```
+
+> 单测中 `root-layout.test.ts` / `storefront.test.ts` 依赖 Hydrogen 运行时的 `module.registerHooks`，需要 **Node ≥ 22.15** 才能通过；其余用例在 22.12 下即可运行。
 
 `.env` 已设置为 `MOCK_SHOP=1`，开箱即用。想换 mock.shop 里的其它店铺（宠物、滑雪板等），把 `PUBLIC_STORE_DOMAIN` 设成对应 host（目录见 https://mock.shop/llms.txt），例如 `pets.mock.shop`。
 

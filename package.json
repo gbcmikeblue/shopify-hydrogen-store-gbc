@@ -7,7 +7,9 @@
     "build": "react-router build",
     "deploy": "shopify hydrogen deploy --assets-dir dist/client --worker-dir dist/server",
     "dev": "vite dev",
+    "dev:https": "vite dev",
     "preview": "react-router build && vite preview",
+    "test": "node --experimental-strip-types --test \"__test__/*.test.ts\"",
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {

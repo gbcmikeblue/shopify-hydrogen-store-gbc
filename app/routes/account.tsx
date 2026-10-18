@@ -2,7 +2,10 @@ import { gql } from "@shopify/hydrogen/customer-account";
 import { Link, useNavigation } from "react-router";
 
 import { customerAccountContext } from "~/lib/customer-account";
+import { envContext, type Env } from "~/lib/env";
 import { formatPrice } from "~/lib/money";
+import { shouldUseMockShop } from "~/lib/shop";
+import { formatPageTitle, getShopNameFromRootMatch } from "~/lib/storefront-shop";
 
 import type { Route } from "./+types/account";
 
@@ -51,13 +54,28 @@ const dateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZ
 const buttonClass =
   "rounded-button focus-visible:outline-accent inline-flex h-11 items-center justify-center px-5 text-sm font-medium no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-safe:transition-[color,background-color,border-color,transform] motion-safe:active:scale-[0.97]";
 
-export function meta({}: Route.MetaArgs) {
-  return [{ title: "Account · CORE" }];
+export function meta({ matches }: Route.MetaArgs) {
+  return [{ title: formatPageTitle("Account", getShopNameFromRootMatch(matches[0])) }];
+}
+
+type UnavailableReason = "mock" | "insecure" | "missing-config";
+
+// Mirrors the gate in `createRequestCustomerAccount` so the page can name the
+// actual blocker instead of listing every requirement at once.
+function unavailableReason(env: Env, request: Request): UnavailableReason {
+  if (shouldUseMockShop(env)) return "mock";
+  if (new URL(request.url).protocol !== "https:") return "insecure";
+  return "missing-config";
 }
 
 export async function loader({ context, request }: Route.LoaderArgs) {
   const customerAccount = context.get(customerAccountContext);
-  if (!customerAccount) return { status: "unavailable" } as const;
+  if (!customerAccount) {
+    return {
+      status: "unavailable",
+      reason: unavailableReason(context.get(envContext), request),
+    } as const;
+  }
 
   const { client, session, sessionManager, requestContext } = customerAccount;
   // Reading the token marks the response as personalized, so it is never cached.
@@ -94,7 +112,7 @@ export default function AccountRoute({ loaderData }: Route.ComponentProps) {
       className="max-w-page px-margin mx-auto w-full flex-1 py-12"
     >
       <h1 className="type-display text-on-surface mb-8">Account</h1>
-      {loaderData.status === "unavailable" ? <Unavailable /> : null}
+      {loaderData.status === "unavailable" ? <Unavailable reason={loaderData.reason} /> : null}
       {loaderData.status === "signed-out" ? <SignIn loginFailed={loaderData.loginFailed} /> : null}
       {loaderData.status === "error" ? (
         <>
@@ -109,16 +127,35 @@ export default function AccountRoute({ loaderData }: Route.ComponentProps) {
   );
 }
 
-function Unavailable() {
+function Unavailable({ reason }: { reason: UnavailableReason }) {
   return (
     <section className="border-border rounded border p-8" aria-labelledby="unavailable-heading">
       <h2 id="unavailable-heading" className="type-heading-md text-on-surface mb-3">
-        Customer Accounts aren&apos;t set up
+        Customer Accounts aren&apos;t available
       </h2>
       <p className="text-on-surface-secondary max-w-xl">
-        Customer Accounts need a real store, <code>SHOP_ID</code>,{" "}
-        <code>PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID</code>, <code>SESSION_SECRET</code>, and HTTPS
-        (use <code>npm run dev:https</code> locally).
+        {reason === "mock" ? (
+          <>
+            This storefront runs on the tokenless mock.shop demo, which has no Customer Accounts.
+            Connect a real store to enable sign-in.
+          </>
+        ) : null}
+        {reason === "insecure" ? (
+          <>
+            Customer Account OAuth requires HTTPS. Start the dev server with{" "}
+            <code>npm run dev:https</code> and open the <code>https://</code> URL.
+          </>
+        ) : null}
+        {reason === "missing-config" ? (
+          <>
+            Set <code>SHOP_ID</code>, <code>PUBLIC_CUSTOMER_ACCOUNT_API_CLIENT_ID</code> and{" "}
+            <code>SESSION_SECRET</code> in <code>.env</code> (or run{" "}
+            <code>npx shopify hydrogen env pull</code>).
+          </>
+        ) : null}
+      </p>
+      <p className="text-on-surface-secondary mt-4 max-w-xl text-sm">
+        See <code>docs/DEVELOPMENT.md</code> for the full checklist.
       </p>
     </section>
   );
