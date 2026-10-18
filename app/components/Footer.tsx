@@ -25,6 +25,11 @@ export function Footer({ shopInfo }: { shopInfo: StorefrontShop }) {
           </h2>
           <ul role="list" className="flex flex-col gap-2">
             <li>
+              <Link to="/about" className={linkClass}>
+                About
+              </Link>
+            </li>
+            <li>
               <Link to="/search" className={linkClass}>
                 Search
               </Link>

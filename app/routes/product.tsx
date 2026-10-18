@@ -11,10 +11,12 @@ import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { ProductCard, PRODUCT_CARD_FRAGMENT } from "~/components/ProductCard";
+import { ShopifyImage } from "~/components/ShopifyImage";
 import { openCartDrawer } from "~/lib/cart-drawer";
 import { formatPrice, salePercent } from "~/lib/money";
 import { ProductProvider, useProductForm } from "~/lib/product";
 import { storefrontClientContext } from "~/lib/storefront";
+import { buildBreadcrumbJsonLd, buildProductJsonLd } from "~/lib/structured-data";
 import {
   formatPageTitle,
   getShopNameFromRootMatch,
@@ -170,6 +172,7 @@ export async function loader({ context, params, request }: Route.LoaderArgs) {
     relatedProducts: data.products.nodes
       .filter((product) => product.handle !== data.product?.handle)
       .slice(0, 4),
+    origin: new URL(request.url).origin,
   };
 }
 
@@ -317,11 +320,12 @@ function ProductGallery({
               className="w-full shrink-0 snap-center contain-paint md:w-auto md:shrink"
             >
               <div className="bg-surface-secondary aspect-square overflow-hidden">
-                <img
+                <ShopifyImage
                   src={image.url}
                   alt={image.altText ?? product.title}
-                  width={image.width ?? undefined}
-                  height={image.height ?? undefined}
+                  srcWidth={image.width}
+                  srcHeight={image.height}
+                  sizes="(min-width: 768px) 50vw, 100vw"
                   className="h-full w-full object-cover"
                   loading={index === 0 ? "eager" : "lazy"}
                   fetchPriority={index === 0 ? "high" : "auto"}
@@ -789,6 +793,40 @@ function RelatedProducts({ products }: { products: RelatedProduct[] }) {
   );
 }
 
+function ProductStructuredData({ product, origin }: { product: ProductData; origin: string }) {
+  const variant = product.selectedOrFirstAvailableVariant;
+
+  const productJsonLd = buildProductJsonLd(
+    {
+      handle: product.handle,
+      title: product.title,
+      description: product.description,
+      vendor: product.vendor,
+      images: product.images.nodes,
+      variant: variant
+        ? {
+            sku: variant.sku,
+            price: variant.price,
+            availableForSale: variant.availableForSale,
+          }
+        : null,
+    },
+    origin,
+  );
+
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Home", url: `${origin}/` },
+    { name: product.title, url: `${origin}/products/${product.handle}` },
+  ]);
+
+  return (
+    <>
+      <script type="application/ld+json">{JSON.stringify(productJsonLd)}</script>
+      <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
+    </>
+  );
+}
+
 export default function ProductRoute({ loaderData }: Route.ComponentProps) {
   const { product, relatedProducts } = loaderData;
   const navigate = useNavigate();
@@ -814,6 +852,7 @@ export default function ProductRoute({ loaderData }: Route.ComponentProps) {
       }}
     >
       <ProductViewedTracker product={product} />
+      <ProductStructuredData product={product} origin={loaderData.origin} />
       <main className="flex-1" id="main-content" tabIndex={-1}>
         <ProductPageContent product={product} />
         <RelatedProducts products={relatedProducts} />

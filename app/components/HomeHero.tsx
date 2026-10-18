@@ -3,6 +3,8 @@ import { Link } from "react-router";
 
 import type { HomeHeroData } from "~/lib/home-hero";
 
+import { ShopifyImage } from "./ShopifyImage";
+
 export function HomeHero({ hero }: { hero: HomeHeroData }) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const image = hero.image && hero.image.url !== failedImageUrl ? hero.image : null;
@@ -12,9 +14,12 @@ export function HomeHero({ hero }: { hero: HomeHeroData }) {
       <div className="bleed-full bg-surface-secondary relative overflow-hidden">
         {image ? (
           <>
-            <img
+            <ShopifyImage
               src={image.url}
               alt={image.altText ?? ""}
+              srcWidth={image.width}
+              srcHeight={image.height}
+              sizes="100vw"
               className="absolute inset-0 h-full w-full object-cover"
               loading="eager"
               fetchPriority="high"

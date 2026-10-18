@@ -1,6 +1,8 @@
 import { gql, type StorefrontApi } from "@shopify/hydrogen";
 import { Link } from "react-router";
 
+import { ShopifyImage } from "./ShopifyImage";
+
 export const COLLECTION_CARD_PRODUCT_COUNT_LIMIT = 100;
 
 export const COLLECTION_CARD_FRAGMENT = gql(`
@@ -18,6 +20,8 @@ export const COLLECTION_CARD_FRAGMENT = gql(`
         featuredImage {
           url
           altText
+          width
+          height
         }
       }
     }
@@ -71,8 +75,8 @@ export function CollectionCard({
     ? (collection.products.nodes[0]?.featuredImage ?? null)
     : null;
   const image = collection.image ?? fallbackImage;
-  const imageWidth = collection.image?.width ?? undefined;
-  const imageHeight = collection.image?.height ?? undefined;
+  const imageWidth = image?.width ?? undefined;
+  const imageHeight = image?.height ?? undefined;
 
   return (
     <Link
@@ -84,11 +88,12 @@ export function CollectionCard({
       <div className="bg-surface-secondary relative block aspect-square overflow-hidden">
         {image ? (
           <div className="h-full w-full motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.04]">
-            <img
+            <ShopifyImage
               src={image.url}
               alt=""
-              width={imageWidth}
-              height={imageHeight}
+              srcWidth={imageWidth}
+              srcHeight={imageHeight}
+              sizes="(min-width: 768px) 33vw, 100vw"
               className="h-full w-full object-cover"
               loading={priority ? "eager" : "lazy"}
               fetchPriority={priority ? "high" : "auto"}

@@ -186,17 +186,39 @@ SESSION_SECRET=          # ≥32 位随机串
 
 | 优先级 | 功能 | 落点 | 备注 |
 | --- | --- | --- | --- |
-| 高 | 商品详情页拆分 | `app/routes/product.tsx`（约 900 行） | 先拆 `Gallery` / `VariantPicker` / `AddToCart` / `RelatedProducts`，再改版式 |
-| 高 | 图片响应式 | 新建 `app/components/ShopifyImage.tsx` | 当前全站裸 `<img>`，没用 Shopify CDN 的 `width` 参数生成 `srcset`；改用后 LCP 与移动端流量明显改善 |
+| 高 | 商品详情页拆分 | `app/routes/product.tsx`（约 900 行） | 未做。先拆 `Gallery` / `VariantPicker` / `AddToCart` / `RelatedProducts`，再改版式 |
+| 已完成 | 图片响应式 | `app/components/ShopifyImage.tsx` | 商品卡、集合卡、hero、商品图廊、购物车与搜索缩略图已全部替换 |
 | 高 | 多语言/多币种 | `app/lib/shop.ts` 的 `storefrontConfig.i18n`（`as const` 写死 US/EN） | 要改成从 URL 前缀或 cookie 推导，并同步 `ShopifyScripts` 的 `i18n`、购物车 country；用 Shopify Markets 承载 |
 | 中 | 免运费进度条 | `app/components/CartDrawer.tsx` | 阈值建议走店铺 shipping 政策或 metafield，不要硬编码 |
 | 中 | 加购推荐 | `app/components/CartDrawer.tsx` + 新查询 | 详情页已有 `relatedProducts` 可复用查询形状 |
 | 中 | 尺寸表 / 详情富文本 | `product.tsx` 查询加 `metafields(namespace:"custom")` | 依赖店铺侧先录入 metafield |
-| 中 | 内容页（About / Journal / FAQ） | `app/routes/*.tsx` + `app/routes.ts` 注册 | 博客走 `blog(handle)` 查询，需店铺有 Blog |
-| 中 | 结构化数据补全 | 已有 Product / BreadcrumbList | 补 `Organization`、`WebSite` + `SearchAction` |
+| 中 | 内容页（About / Journal / FAQ） | `app/routes/about.tsx` 已完成，其余待做 | 博客走 `blog(handle)` 查询，需店铺有 Blog |
+| 已完成 | 结构化数据 | `app/lib/structured-data.ts` | 原状只有集合/搜索的 BreadcrumbList，商品页其实没有 Product；现已补 Product + Breadcrumb + 全站 Organization/WebSite |
 | 低 | 收藏 / 心愿单 | 新 `app/lib/wishlist.ts` | localStorage 方案注意 SSR 无 `window`；跨设备要落 Customer Account metafield |
 | 低 | 商品评价 | `product.tsx` 插入区块 | 第三方脚本注意 CSP 与 Worker 环境 |
 | 低 | GA4 / Meta Pixel | `app/root.tsx` + `app/components/AnalyticsTrackers.tsx` | 现有 `PageViewedTracker` / `CartAnalyticsTracker` 可作模板 |
+
+### 响应式图片约定（已落地）
+
+`app/components/ShopifyImage.tsx` 封装了 Shopify CDN 的 `width` 参数：
+
+```tsx
+<ShopifyImage
+  src={image.url}
+  alt={image.altText ?? ""}
+  srcWidth={image.width}
+  srcHeight={image.height}
+  sizes="(min-width: 768px) 33vw, 50vw"
+  className="h-full w-full object-cover"
+/>
+```
+
+规则：
+
+- `srcWidth` / `srcHeight` 传 Storefront API 返回的**原图尺寸**，不是显示尺寸；布局提示走 `sizes`
+- 缩略图用 `widths={[80, 160, 240]}` + `sizes="5rem"`，避免为 80px 容器下载 1600px 原图
+- 相对路径（`/icons/*.svg`）不会生成 `srcSet`，图标可以安全使用
+- 片段里没查 `width` / `height` 时组件仍可用，只是 `srcSet` 无法按原图宽度封顶
 
 ### 新页面标准流程
 

@@ -13,6 +13,7 @@ import {
   useLoadMore,
 } from "~/components/CollectionBrowse";
 import { ProductCard } from "~/components/ProductCard";
+import { ShopifyImage } from "~/components/ShopifyImage";
 import { loadCollectionPage } from "~/lib/collection";
 import { storefrontClientContext } from "~/lib/storefront";
 import {
@@ -123,11 +124,12 @@ function CollectionHeader({ collection }: { collection: CollectionData }) {
         </div>
         {collection.image ? (
           <div className="bg-surface-secondary aspect-landscape rounded-card overflow-hidden">
-            <img
+            <ShopifyImage
               src={collection.image.url}
               alt={collection.image.altText ?? collection.title}
-              width={collection.image.width ?? undefined}
-              height={collection.image.height ?? undefined}
+              srcWidth={collection.image.width}
+              srcHeight={collection.image.height}
+              sizes="(min-width: 768px) 16rem, 100vw"
               className="h-full w-full object-cover"
               loading="eager"
               fetchPriority="high"

@@ -14,6 +14,8 @@ import { formatPrice } from "~/lib/money";
 import { describeSuggestions } from "~/lib/predictive-search";
 import { routeTemplates } from "~/lib/route-templates";
 
+import { ShopifyImage } from "./ShopifyImage";
+
 const SEARCH_PAGE_PATH = "/search";
 const TITLE_ID = "search-drawer-title";
 const INPUT_ID = "search-drawer-query";
@@ -184,13 +186,12 @@ function SuggestionLink({ product, term }: { product: PredictiveSearchProductIte
       onClick={() => closeSearchDrawer()}
     >
       {image !== null ? (
-        <img
+        <ShopifyImage
           src={image.url}
           alt={image.altText ?? ""}
-          width={48}
-          height={48}
+          widths={[48, 96, 144]}
+          sizes="3rem"
           className="bg-surface-secondary size-12 shrink-0 rounded object-cover"
-          loading="lazy"
         />
       ) : (
         <span className="bg-surface-secondary size-12 shrink-0 rounded" aria-hidden="true" />

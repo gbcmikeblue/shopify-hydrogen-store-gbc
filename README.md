@@ -80,7 +80,9 @@ npm run deploy
 - [x] 改一处 UI（`app/components/AnnouncementBar.tsx` 里的公告文案）
 - [ ] 换主题：改 `app/tokens.css` 的色板 / 字体，做出自己的品牌感
 - [ ] 新增「商品筛选」维度：`app/routes/collection.tsx` 里加价格区间或 tag 过滤
-- [ ] 新增页面：`/journal`（博客）或 `/about`，练习 `routes.ts` 注册 + `meta` 导出
+- [x] 新增页面：`/about` 已落地（`app/routes/about.tsx`），可照此加 `/journal`
+- [x] 响应式图片：`app/components/ShopifyImage.tsx` 生成 CDN `srcSet`
+- [x] 结构化数据：Organization / WebSite / Product / BreadcrumbList
 - [ ] 购物车进阶：加「满额免运费进度条」或「加购推荐」（`app/components/CartDrawer.tsx`）
 - [ ] 接 Customer Account 登录（需要真实店铺 + `npm run dev:https`）
 - [ ] 部署到 Oxygen，拿到公网 URL

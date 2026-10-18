@@ -7,6 +7,7 @@ import { closeCartDrawer, configureOpenCartAction, CART_DRAWER_ID } from "~/lib/
 import { formatPrice } from "~/lib/money";
 
 import { publishCartViewed } from "./AnalyticsTrackers";
+import { ShopifyImage } from "./ShopifyImage";
 
 function CartErrorBanner() {
   const errors = useCart((state) => state.errors);
@@ -124,11 +125,12 @@ export function CartLineItem({
     >
       <div className="bg-surface-secondary size-20 shrink-0 overflow-hidden">
         {merchandise?.image ? (
-          <img
+          <ShopifyImage
             src={merchandise.image.url}
             alt={merchandise.image.altText ?? product?.title ?? merchandise.title ?? ""}
+            widths={[80, 160, 240]}
+            sizes="5rem"
             className="h-full w-full object-cover"
-            loading="lazy"
           />
         ) : null}
       </div>

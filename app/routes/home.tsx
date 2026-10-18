@@ -39,12 +39,16 @@ const HOME_QUERY = gql(
           image {
             url
             altText
+            width
+            height
           }
           products(first: 1) {
             nodes {
               featuredImage {
                 url
                 altText
+                width
+                height
               }
             }
           }

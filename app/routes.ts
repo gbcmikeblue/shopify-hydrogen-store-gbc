@@ -5,6 +5,7 @@ export default [
   route("products/:handle", "routes/product.tsx"),
   route("collections", "routes/collections.tsx"),
   route("collections/:handle", "routes/collection.tsx"),
+  route("about", "routes/about.tsx"),
   route("cart", "routes/cart.tsx"),
   route("search", "routes/search.tsx"),
   route("account", "routes/account.tsx"),

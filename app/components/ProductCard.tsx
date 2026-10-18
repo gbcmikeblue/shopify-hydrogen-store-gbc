@@ -3,6 +3,8 @@ import { Link } from "react-router";
 
 import { compareMoney, formatPrice } from "~/lib/money";
 
+import { ShopifyImage } from "./ShopifyImage";
+
 export const PRODUCT_CARD_FRAGMENT = gql(`
   fragment ProductCard on Product {
     handle
@@ -17,6 +19,8 @@ export const PRODUCT_CARD_FRAGMENT = gql(`
       nodes {
         url
         altText
+        width
+        height
       }
     }
     availableForSale
@@ -67,9 +71,12 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
       <div className="rounded-card bg-surface-secondary relative block aspect-square overflow-hidden">
         {primaryImage ? (
           <div className="h-full w-full motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.04]">
-            <img
+            <ShopifyImage
               src={primaryImage.url}
               alt={primaryImage.altText ?? product.title}
+              srcWidth={primaryImage.width}
+              srcHeight={primaryImage.height}
+              sizes="(min-width: 768px) 33vw, 50vw"
               className="h-full w-full object-cover"
               loading={priority ? "eager" : "lazy"}
               fetchPriority={priority ? "high" : "auto"}
@@ -78,11 +85,13 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         ) : null}
         {hoverImage ? (
           <div className="pointer-events-none absolute inset-0 opacity-0 motion-safe:transition-opacity motion-safe:duration-300 motion-safe:group-hover:opacity-100">
-            <img
+            <ShopifyImage
               src={hoverImage.url}
               alt={hoverImage.altText ?? ""}
+              srcWidth={hoverImage.width}
+              srcHeight={hoverImage.height}
+              sizes="(min-width: 768px) 33vw, 50vw"
               className="h-full w-full object-cover"
-              loading="lazy"
             />
           </div>
         ) : null}

@@ -1,4 +1,9 @@
-type HeroImage = { url: string; altText: string | null };
+type HeroImage = {
+  url: string;
+  altText: string | null;
+  width?: number | null;
+  height?: number | null;
+};
 
 type HeroCollection = {
   title: string;

@@ -25,6 +25,7 @@ import { envContext } from "~/lib/env";
 import { predictiveSearchHandlers } from "~/lib/predictive-search-handlers";
 import { loadRootLayout } from "~/lib/root-layout";
 import { routeTemplates } from "~/lib/route-templates";
+import { buildStoreJsonLd } from "~/lib/structured-data";
 import { createEphemeralSessionManager } from "~/lib/session";
 import { analyticsConsent, resolveShopIdentity, storefrontConfig } from "~/lib/shop";
 import {
@@ -104,6 +105,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     shopInfo: layout.shopInfo,
     shopIdentity: resolveShopIdentity(env, layout.shopId),
     currency: layout.currency,
+    origin: new URL(request.url).origin,
   };
 }
 
@@ -132,6 +134,11 @@ export function Layout({ children }: { children: ReactNode }) {
         <Links />
       </head>
       <body className="bg-surface text-on-surface font-body flex min-h-svh flex-col antialiased">
+        {rootData ? (
+          <script type="application/ld+json">
+            {JSON.stringify(buildStoreJsonLd(rootData.shopInfo, rootData.origin))}
+          </script>
+        ) : null}
         <a
           href="#main-content"
           className="focus-visible:bg-interactive focus-visible:text-interactive-text sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:start-4 focus-visible:top-4 focus-visible:z-50 focus-visible:rounded focus-visible:px-4 focus-visible:py-2"
